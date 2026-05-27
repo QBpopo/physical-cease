@@ -1,0 +1,43 @@
+{
+	"name": "-",
+	"version": "0.0.0",
+	"private": true,
+	"description": "",
+	"keywords": [],
+	"license": "",
+	"author": "+2",
+	"type": "module",
+	"scripts": {
+		"lint": "oxlint",
+		"lint:fix": "oxlint --fix",
+		"fmt": "oxfmt",
+		"fmt:check": "oxfmt --check",
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"dev": "vite",
+		"build": "tsc && vite build",
+		"preview": "vite preview"
+	},
+	"devDependencies": {
+		"@types/node": "^25.6.2",
+		"oxfmt": "^0.48.0",
+		"oxlint": "^1.63.0",
+		"typescript": "^6.0.3",
+		"vite": "^8.0.14"
+	},
+	"devEngines": {
+		"packageManager": {
+			"name": "pnpm",
+			"version": "11.3.0",
+			"onFail": "warn"
+		},
+		"runtime": {
+			"name": "node",
+			"version": "^24.15.0",
+			"onFail": "warn"
+		}
+	},
+	"engines": {
+		"node": "^24.15.0"
+	},
+	"dependencies": {}
+}

@@ -1,7 +1,7 @@
 import { Position } from "./vector.ts";
 import type { DataFields } from "./types.ts";
 
-import type { FromFor, ImplFrom } from "./trait/from.ts";
+import type { ImplFromFor, ImplFrom } from "./trait/from.ts";
 import { use_trait_from } from "./trait/from.ts";
 
 export const enum Direction {
@@ -27,7 +27,7 @@ export class Cor {
 	}
 
 	declare static impl_from: ImplFrom;
-	declare static from: FromFor<Cor>;
+	declare static from: ImplFromFor<Cor>;
 }
 use_trait_from(Cor);
 Cor.impl_from(Number, v => new Cor({ top: v, right: v, bottom: v, left: v }));
@@ -60,7 +60,7 @@ export class Ground {
 
 export class StaticBlock {
 	position = new Position();
-	cor = Cor.from(Number, 0);
+	cor = Cor.from(0);
 
 	constructor(static_block?: DataFields<StaticBlock>) {
 		if (!static_block) return;

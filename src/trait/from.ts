@@ -16,7 +16,7 @@ const not_implemented_error = <T, S>(self: Self<T>, source: Source<S>): never =>
 };
 
 export type ImplFrom = <S, T>(source: Source<S>, fn: FromFn<T, S>) => void;
-export type FromFor<T> = <S>(source: Source<S>, value: S) => T;
+export type ImplFromFor<T> = <S>(source: Source<S>, value: S) => T;
 
 const trait_from = new WeakMap<StrictConstructor, WeakMap<StrictConstructor, Function>>();
 
@@ -30,7 +30,7 @@ export const use_trait_from_with_symbol = <T>(self: Self<T>) => {
 			}
 			impls.set(source, fn);
 		},
-		[from]: function <S>(source: Source<S>, value: S): T {
+		[from]: <S>(source: Source<S>, value: S): T => {
 			const fn = impls.get(source);
 			if (!fn) {
 				return not_implemented_error(self, source);

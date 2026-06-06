@@ -18,10 +18,6 @@ export class Controller {
 	private state = State.None;
 	private timer: Timer | null = null;
 
-	private turn = () => {};
-	private gain_ke = () => {};
-	private reset_level = () => {};
-
 	constructor(private action: Action) {}
 
 	private clear_timer() {
@@ -39,7 +35,7 @@ export class Controller {
 			this.state = State.GainKE;
 			this.timer = setTimeout(() => {
 				this.state = State.ResetLevel;
-				this.reset_level();
+				this.action.reset_level();
 				this.timer = null;
 			}, 2800);
 		}, 200);
@@ -49,9 +45,9 @@ export class Controller {
 		this.clear_timer();
 
 		if (this.state === State.Turn) {
-			this.turn();
+			this.action.turn();
 		} else if (this.state === State.GainKE) {
-			this.gain_ke();
+			this.action.gain_ke();
 		}
 
 		this.state = State.None;

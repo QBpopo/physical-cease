@@ -103,6 +103,10 @@ export class Model {
 			return;
 		}
 
+		if (this.key.position.eq(this.block.position)) {
+			this.has_key = true;
+		}
+
 		const offset = dir_offset(this.block.velocity_dir);
 		const next_x = this.block.position.x + offset[0];
 		const next_y = this.block.position.y + offset[1];
@@ -122,14 +126,14 @@ export class Model {
 			return;
 		}
 
+		// 面朝方向那一侧扫过的格子才触发地面效果
+		const swept_x = this.block.facing_dir === this.block.velocity_dir ? next_x : this.block.position.x;
+		const swept_y = this.block.facing_dir === this.block.velocity_dir ? next_y : this.block.position.y;
+
 		this.block.position.x = next_x;
 		this.block.position.y = next_y;
 
-		if (this.key.position.eq(this.block.position)) {
-			this.has_key = true;
-		}
-
-		const ground = this.grounds.find(g => g.position.eq(this.block.position));
+		const ground = this.grounds.find(g => g.position.x === swept_x && g.position.y === swept_y);
 		if (!ground) {
 			this.status = ModelState.Lost;
 			this.reset_level();
@@ -141,9 +145,6 @@ export class Model {
 		if (this.block.current_kinetic_energy < 0) {
 			this.status = ModelState.Lost;
 			this.reset_level();
-			return;
-		} else if (this.block.current_kinetic_energy === 0) {
-			this.check_end_condition();
 			return;
 		}
 	}

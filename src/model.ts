@@ -98,7 +98,10 @@ export class Model {
 
 	step() {
 		if (this.status !== ModelState.Playing) return;
-		if (this.block.current_kinetic_energy === 0) return;
+		if (this.block.current_kinetic_energy === 0) {
+			this.check_end_condition();
+			return;
+		}
 
 		const offset = dir_offset(this.block.velocity_dir);
 		const next_x = this.block.position.x + offset[0];
@@ -115,6 +118,7 @@ export class Model {
 			this.block.current_kinetic_energy *= e_block * e_wall;
 			this.block.velocity_dir = next_velocity_dir;
 
+			this.check_end_condition();
 			return;
 		}
 
@@ -136,12 +140,11 @@ export class Model {
 
 		if (this.block.current_kinetic_energy < 0) {
 			this.status = ModelState.Lost;
+			this.reset_level();
+			return;
 		} else if (this.block.current_kinetic_energy === 0) {
 			this.check_end_condition();
-		}
-
-		if (this.status === ModelState.Lost) {
-			this.reset_level();
+			return;
 		}
 	}
 }

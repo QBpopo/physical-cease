@@ -70,6 +70,10 @@ export class View {
 		this.draw_state_text(data);
 	}
 
+	reset_static() {
+		this.static_drawn = false;
+	}
+
 	private camera_x = 0;
 	private camera_y = 0;
 

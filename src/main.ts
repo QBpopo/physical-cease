@@ -1,8 +1,7 @@
-import { Model } from "./model.ts";
+import { Model, ModelState } from "./model.ts";
 import { View, type ViewData } from "./view.ts";
 import { Controller } from "./controller.ts";
-
-import { tutorial } from "./level/tutorial.ts";
+import { levels } from "./level/level.ts";
 
 const to_view_data = (model: Model): ViewData => {
 	const all_x = [
@@ -49,10 +48,18 @@ async function main() {
 	document.body.style.height = "100vh";
 	document.body.style.overflow = "hidden";
 
-	const model = tutorial;
+	let level_index = 0;
+	let model = levels[level_index]!;
 
 	const view = new View();
 	await view.init(canvas);
+
+	const load_level = () => {
+		model = levels[level_index]!;
+		view.reset_static();
+		view.update(to_view_data(model));
+	};
+
 	view.update(to_view_data(model));
 
 	const action = {
@@ -79,6 +86,14 @@ async function main() {
 
 	// Game loop for logical ticks
 	setInterval(() => {
+		if (model.status === ModelState.Won) {
+			if (level_index < levels.length - 1) {
+				level_index++;
+				load_level();
+			}
+			return;
+		}
+
 		if (model.block.current_kinetic_energy > 0) {
 			model.step();
 			view.update(to_view_data(model));

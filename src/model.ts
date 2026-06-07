@@ -1,5 +1,5 @@
-import { Block, Cor, Ground, StaticBlock, Key, EndZone } from "./entities.ts";
-import { Direction, opposite_dir } from "./entities.ts";
+import { Direction, Cor, opposite_dir } from "./components.ts";
+import { Block, Ground, StaticBlock, Key, EndZone } from "./entities.ts";
 import type { DataFields } from "./types.ts";
 
 export const enum ModelState {

@@ -15,6 +15,7 @@ export interface ViewData {
 	is_key_visible: boolean;
 	target_ke: number;
 	current_ke: number;
+	camera: { x: number; y: number };
 }
 
 export class View {
@@ -54,6 +55,9 @@ export class View {
 	}
 
 	update(data: ViewData) {
+		this.camera_x = data.camera.x;
+		this.camera_y = data.camera.y;
+
 		if (!this.static_drawn) {
 			this.draw_grounds(data);
 			this.draw_end_zone(data);
@@ -61,17 +65,20 @@ export class View {
 			this.static_drawn = true;
 		}
 
-		this.draw_block(data);
 		this.draw_key(data);
+		this.draw_block(data);
 		this.draw_state_text(data);
 	}
 
+	private camera_x = 0;
+	private camera_y = 0;
+
 	private to_screen_x(val: number) {
-		return val * CELL_SIZE + CANVAS_W / 2;
+		return (val - this.camera_x) * CELL_SIZE + CANVAS_W / 2;
 	}
 
 	private to_screen_y(val: number) {
-		return -val * CELL_SIZE + CANVAS_H / 2;
+		return (this.camera_y - val) * CELL_SIZE + CANVAS_H / 2;
 	}
 
 	private draw_grounds(data: ViewData) {
@@ -86,7 +93,23 @@ export class View {
 				.stroke({ width: stroke_width, color: 0xeeeeee });
 			graphic.x = this.to_screen_x(g.position.x);
 			graphic.y = this.to_screen_y(g.position.y);
+
 			this.grounds_container.addChild(graphic);
+
+			const text = (v => {
+				if (v === 0) return "";
+				if (v > 0) return `+${v}`;
+				return `${v}`;
+			})(g.kinetic_energy_delta);
+
+			const delta_text = new Text({ text });
+
+			delta_text.alpha = 0.5;
+			delta_text.anchor.set(0.5, 0.5);
+			delta_text.x = this.to_screen_x(g.position.x);
+			delta_text.y = this.to_screen_y(g.position.y);
+
+			this.grounds_container.addChild(delta_text);
 		}
 	}
 

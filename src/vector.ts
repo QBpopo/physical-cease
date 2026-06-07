@@ -9,6 +9,10 @@ export class Vector {
 		this.x = vec.x;
 		this.y = vec.y;
 	}
+
+	eq(other: this): boolean {
+		return this.x === other.x && this.y === other.y;
+	}
 }
 
 export class Position extends Vector {}

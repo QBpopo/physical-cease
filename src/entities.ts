@@ -11,6 +11,10 @@ export const enum Direction {
 	Left,
 }
 
+export const next_dir = (dir: Direction): Direction => (dir + 1) % 4;
+export const opposite_dir = (dir: Direction): Direction => (dir + 2) % 4;
+export const prev_dir = (dir: Direction): Direction => (dir + 3) % 4;
+
 // 恢复系数 e (Coefficient of Restitution)
 export class Cor {
 	top = 1;
@@ -36,6 +40,7 @@ export class Block {
 	position = new Position();
 	cor = new Cor();
 	facing_dir = Direction.Up;
+	velocity_dir = this.facing_dir;
 	current_kinetic_energy = 0;
 
 	constructor(block?: DataFields<Block>) {
@@ -43,6 +48,7 @@ export class Block {
 		this.position = block.position;
 		this.cor = block.cor;
 		this.facing_dir = block.facing_dir;
+		this.velocity_dir = block.velocity_dir;
 		this.current_kinetic_energy = block.current_kinetic_energy;
 	}
 }

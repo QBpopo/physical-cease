@@ -98,8 +98,8 @@ export class View {
 
 			const text = (v => {
 				if (v === 0) return "";
-				if (v > 0) return `+${v}`;
-				return `${v}`;
+				else if (v > 0) return `+${v}`;
+				else return `${v}`;
 			})(g.kinetic_energy_delta);
 
 			const delta_text = new Text({ text });
@@ -136,6 +136,23 @@ export class View {
 			graphic.x = this.to_screen_x(s.position.x);
 			graphic.y = this.to_screen_y(s.position.y);
 			this.static_blocks_container.addChild(graphic);
+
+			const text = (v => {
+				if (v.top === v.right && v.right === v.bottom && v.bottom === v.left) {
+					if (v.top === 0) return "";
+					else return `${v.top}`;
+				}
+				return "?"; // todo
+			})(s.cor);
+
+			const delta_text = new Text({ text });
+
+			delta_text.alpha = 0.5;
+			delta_text.anchor.set(0.5, 0.5);
+			delta_text.x = this.to_screen_x(s.position.x);
+			delta_text.y = this.to_screen_y(s.position.y);
+
+			this.static_blocks_container.addChild(delta_text);
 		}
 	}
 

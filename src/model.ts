@@ -91,7 +91,7 @@ export class Model {
 	}
 
 	reset_level() {
-		this.block = new Block(this.initial.block);
+		this.block = new Block(structuredClone(this.initial.block));
 		this.has_key = false;
 		this.status = ModelState.Playing;
 	}

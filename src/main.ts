@@ -84,19 +84,36 @@ async function main() {
 	window.addEventListener("touchstart", () => controller.press());
 	window.addEventListener("touchend", () => controller.release());
 
-	// Game loop for logical ticks
-	setInterval(() => {
+	const TICK_MS = 200;
+	let accumulator = 0;
+	let last_time = performance.now();
+
+	const game_loop = (now: number) => {
+		const delta = now - last_time;
+		last_time = now;
+		accumulator += delta;
+
+		controller.tick();
+
 		if (model.status === ModelState.Won) {
 			if (level_index < levels.length - 1) {
 				level_index++;
 				load_level();
 			}
+			requestAnimationFrame(game_loop);
 			return;
 		}
 
-		model.step();
+		while (accumulator >= TICK_MS) {
+			model.step();
+			accumulator -= TICK_MS;
+		}
+
 		view.update(to_view_data(model));
-	}, 200);
+		requestAnimationFrame(game_loop);
+	};
+
+	requestAnimationFrame(game_loop);
 }
 
 main().catch(console.error);

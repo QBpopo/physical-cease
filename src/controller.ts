@@ -1,55 +1,42 @@
-export const enum State {
-	None,
-	Turn,
-	GainKE, // gain kinetic energy
-	ResetLevel,
-}
-
-type Timer = ReturnType<typeof setTimeout>;
-
 export type Action = {
 	turn: () => void;
 	gain_ke: () => void;
 	reset_level: () => void;
 };
 
-// 拓展性不是一般的差
+const TURN_THRESHOLD = 200;
+const RESET_THRESHOLD = 3000;
+
 export class Controller {
-	private state = State.None;
-	private timer: Timer | null = null;
+	private press_time = 0;
+	private pressed = false;
 
 	constructor(private action: Action) {}
 
-	private clear_timer() {
-		if (this.timer) {
-			clearTimeout(this.timer);
-			this.timer = null;
-		}
-	}
-
 	press() {
-		this.clear_timer();
-
-		this.state = State.Turn;
-		this.timer = setTimeout(() => {
-			this.state = State.GainKE;
-			this.timer = setTimeout(() => {
-				this.state = State.ResetLevel;
-				this.action.reset_level();
-				this.timer = null;
-			}, 2800);
-		}, 200);
+		this.press_time = performance.now();
+		this.pressed = true;
 	}
 
 	release() {
-		this.clear_timer();
+		if (!this.pressed) return;
+		this.pressed = false;
 
-		if (this.state === State.Turn) {
+		const elapsed = performance.now() - this.press_time;
+		if (elapsed < TURN_THRESHOLD) {
 			this.action.turn();
-		} else if (this.state === State.GainKE) {
+		} else if (elapsed < RESET_THRESHOLD) {
 			this.action.gain_ke();
+		} else {
+			this.action.reset_level();
 		}
+	}
 
-		this.state = State.None;
+	tick() {
+		if (!this.pressed) return;
+		if (performance.now() - this.press_time >= RESET_THRESHOLD) {
+			this.pressed = false;
+			this.action.reset_level();
+		}
 	}
 }

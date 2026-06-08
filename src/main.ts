@@ -94,10 +94,8 @@ async function main() {
 			return;
 		}
 
-		if (model.block.current_kinetic_energy > 0) {
-			model.step();
-			view.update(to_view_data(model));
-		}
+		model.step();
+		view.update(to_view_data(model));
 	}, 200);
 }
 

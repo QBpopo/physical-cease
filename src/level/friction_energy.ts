@@ -11,6 +11,7 @@ const grounds: Ground[] = Array.from({ length: 8 }, (_, i) => i + 1).flatMap(x =
 grounds.find(g => g.position.eq(Position.from([2, 2])))!.kinetic_energy_delta = -2;
 grounds.find(g => g.position.eq(Position.from([2, 4])))!.kinetic_energy_delta = -1;
 grounds.find(g => g.position.eq(Position.from([3, 4])))!.kinetic_energy_delta = -1;
+grounds.find(g => g.position.eq(Position.from([3, 6])))!.kinetic_energy_delta = -1;
 grounds.find(g => g.position.eq(Position.from([4, 6])))!.kinetic_energy_delta = -1;
 grounds.find(g => g.position.eq(Position.from([6, 2])))!.kinetic_energy_delta = -2;
 grounds.find(g => g.position.eq(Position.from([6, 4])))!.kinetic_energy_delta = -1;

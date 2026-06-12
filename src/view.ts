@@ -2,8 +2,8 @@ import { Application, Graphics, Container, Text } from "pixi.js";
 import { Direction } from "./components.ts";
 import type { Block, EndZone, Ground, Key, StaticBlock } from "./entities.ts";
 
-const CANVAS_W = 800;
-const CANVAS_H = 600;
+export const CANVAS_W = 800;
+export const CANVAS_H = 600;
 const CELL_SIZE = 64;
 
 export interface ViewData {
@@ -165,7 +165,7 @@ export class View {
 		this.block_graphics.rect(-CELL_SIZE / 2, -CELL_SIZE / 2, CELL_SIZE, CELL_SIZE);
 		this.block_graphics.fill({ color: 0x0000ff, alpha: 0.5 });
 
-		const stroke_width = 4;
+		const stroke_width = 8;
 
 		const edge_len = CELL_SIZE / 2;
 		const inset = CELL_SIZE / 2 - stroke_width / 2;

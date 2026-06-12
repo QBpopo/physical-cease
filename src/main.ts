@@ -1,23 +1,11 @@
 import { Model, ModelState } from "./model.ts";
-import { View, type ViewData } from "./view.ts";
+import { View, CANVAS_W, CANVAS_H, type ViewData } from "./view.ts";
 import { Controller } from "./controller.ts";
 import { levels } from "./level/level.ts";
 
 const to_view_data = (model: Model): ViewData => {
-	const all_x = [
-		...model.grounds.map(g => g.position.x),
-		...model.static_blocks.map(s => s.position.x),
-		model.block.position.x,
-		model.end_zone.position.x,
-		model.key.position.x,
-	];
-	const all_y = [
-		...model.grounds.map(g => g.position.y),
-		...model.static_blocks.map(s => s.position.y),
-		model.block.position.y,
-		model.end_zone.position.y,
-		model.key.position.y,
-	];
+	const all_x = [...model.grounds.map(g => g.position.x), ...model.static_blocks.map(s => s.position.x)];
+	const all_y = [...model.grounds.map(g => g.position.y), ...model.static_blocks.map(s => s.position.y)];
 	const min_x = Math.min(...all_x);
 	const max_x = Math.max(...all_x);
 	const min_y = Math.min(...all_y);
@@ -36,17 +24,28 @@ const to_view_data = (model: Model): ViewData => {
 	};
 };
 
+const resize_canvas = (canvas: HTMLCanvasElement) => {
+	const maxW = window.innerWidth;
+	const maxH = window.innerHeight;
+	const scale = Math.min(maxW / CANVAS_W, maxH / CANVAS_H) * 0.8;
+	canvas.style.width = `${CANVAS_W * scale}px`;
+	canvas.style.height = `${CANVAS_H * scale}px`;
+};
+
 async function main() {
 	const canvas = document.createElement("canvas");
-	canvas.style.maxWidth = "80vw";
-	canvas.style.maxHeight = "80vh";
 	document.body.appendChild(canvas);
 	document.body.style.margin = "0";
 	document.body.style.display = "flex";
 	document.body.style.justifyContent = "center";
 	document.body.style.alignItems = "center";
-	document.body.style.height = "100vh";
+	document.body.style.height = "100dvh";
 	document.body.style.overflow = "hidden";
+
+	window.addEventListener("resize", () => resize_canvas(canvas));
+	window.addEventListener("orientationchange", () => {
+		setTimeout(() => resize_canvas(canvas), 100);
+	});
 
 	let level_index = 0;
 	let model = levels[level_index]!;
@@ -81,8 +80,14 @@ async function main() {
 
 	window.addEventListener("mousedown", () => controller.press());
 	window.addEventListener("mouseup", () => controller.release());
-	window.addEventListener("touchstart", () => controller.press());
-	window.addEventListener("touchend", () => controller.release());
+	window.addEventListener("touchstart", e => {
+		e.preventDefault();
+		controller.press();
+	});
+	window.addEventListener("touchend", e => {
+		e.preventDefault();
+		controller.release();
+	});
 
 	const TICK_MS = 200;
 	let accumulator = 0;
@@ -100,16 +105,16 @@ async function main() {
 				level_index++;
 				load_level();
 			}
-			requestAnimationFrame(game_loop);
-			return;
-		}
-
-		while (accumulator >= TICK_MS) {
-			model.step();
-			accumulator -= TICK_MS;
+		} else {
+			while (accumulator >= TICK_MS) {
+				model.step();
+				accumulator -= TICK_MS;
+			}
 		}
 
 		view.update(to_view_data(model));
+		resize_canvas(canvas);
+
 		requestAnimationFrame(game_loop);
 	};
 

@@ -1,4 +1,4 @@
-import { Direction, Cor, opposite_dir } from "./components.ts";
+import { Direction, Cor, opposite_dir, Position } from "./components.ts";
 import { Block, Ground, StaticBlock, Key, EndZone } from "./entities.ts";
 import type { DataFields } from "./types.ts";
 
@@ -53,7 +53,7 @@ export class Model {
 	has_key = false;
 	status = ModelState.Playing;
 
-	private initial: DataFields<Model>;
+	private readonly initial_block: DataFields<Block>;
 
 	constructor(model: DataFields<Model>) {
 		this.target_kinetic_energy = model.target_kinetic_energy;
@@ -63,7 +63,7 @@ export class Model {
 		this.key = model.key;
 		this.end_zone = model.end_zone;
 
-		this.initial = structuredClone(model);
+		this.initial_block = structuredClone(model.block);
 	}
 
 	private can_action() {
@@ -91,7 +91,7 @@ export class Model {
 	}
 
 	reset_level() {
-		this.block = new Block(structuredClone(this.initial.block));
+		this.block = new Block(structuredClone(this.initial_block));
 		this.has_key = false;
 		this.status = ModelState.Playing;
 	}
@@ -108,10 +108,12 @@ export class Model {
 		}
 
 		const offset = dir_offset(this.block.velocity_dir);
-		const next_x = this.block.position.x + offset[0];
-		const next_y = this.block.position.y + offset[1];
+		const next_pos = new Position({
+			x: this.block.position.x + offset[0],
+			y: this.block.position.y + offset[1],
+		});
 
-		const wall = this.static_blocks.find(w => w.position.x === next_x && w.position.y === next_y);
+		const wall = this.static_blocks.find(w => w.position.eq(next_pos));
 		if (wall) {
 			const relative_collision_dir = num_to_dir((this.block.velocity_dir - this.block.facing_dir + 4) % 4);
 			const next_velocity_dir = opposite_dir(this.block.velocity_dir);
@@ -127,13 +129,11 @@ export class Model {
 		}
 
 		// 面朝方向那一侧扫过的格子才触发地面效果
-		const swept_x = this.block.facing_dir === this.block.velocity_dir ? next_x : this.block.position.x;
-		const swept_y = this.block.facing_dir === this.block.velocity_dir ? next_y : this.block.position.y;
+		const swept_pos = this.block.facing_dir === this.block.velocity_dir ? next_pos : this.block.position;
 
-		this.block.position.x = next_x;
-		this.block.position.y = next_y;
+		this.block.position = next_pos;
 
-		const ground = this.grounds.find(g => g.position.x === swept_x && g.position.y === swept_y);
+		const ground = this.grounds.find(g => g.position.eq(swept_pos));
 		if (!ground) {
 			this.status = ModelState.Lost;
 			this.reset_level();

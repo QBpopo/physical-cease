@@ -6,9 +6,11 @@ export const enum ModelState {
 	Playing,
 	Won,
 	Lost,
+	Dying,
+	Falling,
 }
 
-const dir_offset = (dir: Direction): [number, number] => {
+export const dir_offset = (dir: Direction): [number, number] => {
 	switch (dir) {
 		case Direction.Up:
 			return [0, 1];
@@ -54,6 +56,28 @@ export class Model {
 	status = ModelState.Playing;
 
 	private readonly initial_block: DataFields<Block>;
+	private die_elapsed = 0;
+	static readonly DIE_DURATION = 800; // ms
+
+	private fall_elapsed = 0;
+	static readonly FALL_DURATION = 1200; // ms
+
+	private bounce_elapsed = 0;
+	static readonly BOUNCE_DURATION = 300; // ms
+
+	die_progress(): number {
+		return Math.min(this.die_elapsed / Model.DIE_DURATION, 1);
+	}
+
+	fall_progress(): number {
+		return Math.min(this.fall_elapsed / Model.FALL_DURATION, 1);
+	}
+
+	bounce_progress(): number {
+		if (this.bounce_elapsed <= 0) return 0;
+		const t = this.bounce_elapsed / Model.BOUNCE_DURATION;
+		return 1 - Math.abs(t * 2 - 1);
+	}
 
 	constructor(model: DataFields<Model>) {
 		this.target_kinetic_energy = model.target_kinetic_energy;
@@ -93,10 +117,41 @@ export class Model {
 	reset_level() {
 		this.block = new Block(structuredClone(this.initial_block));
 		this.has_key = false;
+		this.die_elapsed = 0;
+		this.fall_elapsed = 0;
+		this.bounce_elapsed = 0;
 		this.status = ModelState.Playing;
 	}
 
+	tick_bounce(dt: number) {
+		if (this.bounce_elapsed > 0) {
+			this.bounce_elapsed += dt;
+			if (this.bounce_elapsed >= Model.BOUNCE_DURATION) {
+				this.bounce_elapsed = 0;
+			}
+		}
+	}
+
+	tick_die(dt: number): boolean {
+		this.die_elapsed += dt;
+		if (this.die_elapsed >= Model.DIE_DURATION) {
+			this.reset_level();
+			return true;
+		}
+		return false;
+	}
+
+	tick_fall(dt: number): boolean {
+		this.fall_elapsed += dt;
+		if (this.fall_elapsed >= Model.FALL_DURATION) {
+			this.reset_level();
+			return true;
+		}
+		return false;
+	}
+
 	step() {
+		if (this.status === ModelState.Dying || this.status === ModelState.Falling) return;
 		if (this.status !== ModelState.Playing) return;
 		if (this.block.current_kinetic_energy === 0) {
 			this.check_end_condition();
@@ -124,6 +179,8 @@ export class Model {
 			this.block.current_kinetic_energy *= e_block * e_wall;
 			this.block.velocity_dir = next_velocity_dir;
 
+			this.bounce_elapsed = 1;
+
 			this.check_end_condition();
 			return;
 		}
@@ -135,16 +192,14 @@ export class Model {
 
 		const ground = this.grounds.find(g => g.position.eq(swept_pos));
 		if (!ground) {
-			this.status = ModelState.Lost;
-			this.reset_level();
+			this.status = ModelState.Falling;
 			return;
 		}
 
 		this.block.current_kinetic_energy += ground.kinetic_energy_delta;
 
 		if (this.block.current_kinetic_energy < 0) {
-			this.status = ModelState.Lost;
-			this.reset_level();
+			this.status = ModelState.Dying;
 			return;
 		}
 	}

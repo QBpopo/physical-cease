@@ -4,7 +4,7 @@ import type { Block, EndZone, Ground, Key, StaticBlock } from "./entities.ts";
 
 export const CANVAS_W = 800;
 export const CANVAS_H = 600;
-const CELL_SIZE = 64;
+export const CELL_SIZE = 64;
 
 export interface ViewData {
 	grounds: Ground[];
@@ -16,6 +16,14 @@ export interface ViewData {
 	target_ke: number;
 	current_ke: number;
 	camera: { x: number; y: number };
+	die_progress: number;
+	fall_progress: number;
+	fall_dir_x: number;
+	fall_dir_y: number;
+	bounce_progress: number;
+	bounce_dir: Direction;
+	anim_progress: number;
+	transition_progress: number;
 }
 
 export class View {
@@ -29,6 +37,13 @@ export class View {
 	private state_text = new Text({ text: "", style: { fill: 0x000 } });
 
 	private static_drawn = false;
+
+	private anim_from_x = 0;
+	private anim_from_y = 0;
+	private anim_target_x = 0;
+	private anim_target_y = 0;
+	private anim_initialized = false;
+	private anim_progress = 0;
 
 	async init(canvas: HTMLCanvasElement) {
 		await this.app.init({
@@ -58,6 +73,41 @@ export class View {
 		this.camera_x = data.camera.x;
 		this.camera_y = data.camera.y;
 
+		const bx = data.block.position.x;
+		const by = data.block.position.y;
+
+		this.anim_progress = Math.max(this.anim_progress, data.anim_progress);
+
+		if (data.fall_progress > 0) {
+			if (this.anim_target_x !== bx || this.anim_target_y !== by) {
+				this.anim_from_x = this.anim_x();
+				this.anim_from_y = this.anim_y();
+				this.anim_target_x = bx;
+				this.anim_target_y = by;
+			}
+			this.anim_progress = Math.min(data.fall_progress * 4, 1);
+		} else if (!this.anim_initialized) {
+			this.anim_from_x = bx;
+			this.anim_from_y = by;
+			this.anim_target_x = bx;
+			this.anim_target_y = by;
+			this.anim_initialized = true;
+		} else if (bx !== this.anim_target_x || by !== this.anim_target_y) {
+			const jump = Math.abs(bx - this.anim_target_x) + Math.abs(by - this.anim_target_y);
+			if (jump <= 2) {
+				// normal / bounce: snap to old target for perfect alignment
+				this.anim_from_x = this.anim_target_x;
+				this.anim_from_y = this.anim_target_y;
+			} else {
+				// teleport: no animation
+				this.anim_from_x = bx;
+				this.anim_from_y = by;
+			}
+			this.anim_target_x = bx;
+			this.anim_target_y = by;
+			this.anim_progress = 0;
+		}
+
 		if (!this.static_drawn) {
 			this.draw_grounds(data);
 			this.draw_end_zone(data);
@@ -72,10 +122,20 @@ export class View {
 
 	reset_static() {
 		this.static_drawn = false;
+		this.anim_initialized = false;
+		this.anim_progress = 0;
 	}
 
 	private camera_x = 0;
 	private camera_y = 0;
+
+	private anim_x(): number {
+		return this.anim_from_x + (this.anim_target_x - this.anim_from_x) * this.anim_progress;
+	}
+
+	private anim_y(): number {
+		return this.anim_from_y + (this.anim_target_y - this.anim_from_y) * this.anim_progress;
+	}
 
 	private to_screen_x(val: number) {
 		return (val - this.camera_x) * CELL_SIZE + CANVAS_W / 2;
@@ -189,8 +249,49 @@ export class View {
 		}
 		this.block_graphics.stroke({ width: stroke_width, color: 0x0000ff });
 
-		this.block_graphics.x = this.to_screen_x(data.block.position.x);
-		this.block_graphics.y = this.to_screen_y(data.block.position.y);
+		const raw_x = this.to_screen_x(this.anim_x());
+		const raw_y = this.to_screen_y(this.anim_y());
+		if (this.anim_progress >= 0.85) {
+			this.block_graphics.x = this.to_screen_x(data.block.position.x);
+			this.block_graphics.y = this.to_screen_y(data.block.position.y);
+		} else {
+			this.block_graphics.x = raw_x;
+			this.block_graphics.y = raw_y;
+		}
+
+		if (data.transition_progress > 0) {
+			const p = data.transition_progress;
+			this.block_graphics.alpha = 1 - p;
+			this.block_graphics.scale.set(1 - p * 0.7);
+			this.block_graphics.visible = true;
+		} else if (data.fall_progress > 0) {
+			const t = data.fall_progress * 1.2;
+			const drift = t * 120;
+			const drop = 9.8 * t * t * 0.5;
+			const p = data.fall_progress;
+			const scale = 1 - p * p * 0.85;
+			this.block_graphics.x += data.fall_dir_x * drift;
+			this.block_graphics.y += -data.fall_dir_y * drift + drop;
+			this.block_graphics.scale.set(scale);
+			this.block_graphics.visible = true;
+		} else if (data.die_progress > 0) {
+			const t = data.die_progress * 0.8;
+			const alpha = Math.sin(t * 12 * Math.PI) * 0.5 + 0.5;
+			this.block_graphics.visible = alpha > 0.3;
+		} else {
+			this.block_graphics.visible = true;
+			this.block_graphics.alpha = 1;
+
+			const bp = data.bounce_progress;
+			if (bp > 0) {
+				const squash = 1 - bp * 0.3;
+				const stretch = 1 + bp * 0.15;
+				const is_vertical = data.bounce_dir === Direction.Up || data.bounce_dir === Direction.Down;
+				this.block_graphics.scale.set(is_vertical ? stretch : squash, is_vertical ? squash : stretch);
+			} else {
+				this.block_graphics.scale.set(1);
+			}
+		}
 	}
 
 	private draw_key(data: ViewData) {

@@ -36,8 +36,8 @@ use_trait_from(Cor);
 Cor.impl_From(Number, v => new Cor({ top: v, right: v, bottom: v, left: v }));
 
 export class Vector {
-	x: number = 0;
-	y: number = 0;
+	x = 0;
+	y = 0;
 
 	constructor(vec?: DataFields<Vector>) {
 		if (!vec) return;
@@ -45,7 +45,7 @@ export class Vector {
 		this.y = vec.y;
 	}
 
-	eq(other: this): boolean {
+	eq(other: { x: number; y: number }): boolean {
 		return this.x === other.x && this.y === other.y;
 	}
 }
